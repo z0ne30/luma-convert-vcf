@@ -1,0 +1,66 @@
+# Ignore everything
+*
+
+# But not these files
+!.gitignore
+!csv-vcf-converter.py
+!question_config.yaml.example
+!README.md
+
+# Even if they are in subdirectories
+!*/
+
+# Ignore all files in any directory named
+Contacts Input/
+Contact Snapshots/
+Archive Outputs/
+__pycache__/
+.DS_Store
+*.log 
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Logs
+*.log
+contact_converter.log
+
+# Data files
+Contacts Input/*
+Contact Snapshots/*
+Archive Outputs/*
+!Contacts Input/.gitkeep
+!Contact Snapshots/.gitkeep
+!Archive Outputs/.gitkeep
+
+# Config
+.env
+.venv
+venv/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo 

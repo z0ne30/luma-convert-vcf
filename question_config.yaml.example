@@ -1,0 +1,69 @@
+# Core Configuration
+core:
+  directories:
+    input: "Contacts Input"
+    snapshots: "Contact Snapshots"
+  vcf:
+    version: "3.0"
+    required_fields: ["name", "email", "phone"]
+
+# Event Configuration
+events:
+  types:
+    YS:  # Yard Sale events
+      name: "Yard Sale"
+      code: "YS" 
+      identifiers: ["Yard Sale", "YS"]
+      questions:
+        - "rsvp_role"
+        - "rsvp_giving"
+        - "rsvp_demo"
+        - "rsvp_linkedin"
+
+  # Question definitions
+  questions:
+    rsvp_role:
+      category: "PROFESSIONAL"
+      note_prefix: "ROLE"
+      patterns:
+        - "Which of the following(s) best describes you?"
+    
+    rsvp_giving:
+      category: "COMMUNITY"
+      note_prefix: "GIVES BACK BY"
+      patterns:
+        - "What's your favorite way to give back to the community?"
+    
+    rsvp_demo:
+      category: "NEEDS"
+      note_prefix: "REQUEST TO DEMO"
+      patterns:
+        - "Do you want to demo your company?"
+      transform:
+        "Yes! I've submitted my application using 🔗 in description!": "Yes"
+        "No, I'm here to give the best feedback to founders using the demo-night app!": "No"
+    
+    rsvp_linkedin:
+      category: "CONTACT"
+      note_prefix: "LINKEDIN"
+      patterns:
+        - "What is your LinkedIn profile?"
+
+# Note formatting
+notes:
+  sections:
+    - name: "EVENTS"
+      priority: 1
+    - name: "PROFESSIONAL"
+      priority: 2
+    - name: "NEEDS"
+      priority: 3
+    - name: "COMMUNITY"
+      priority: 4
+
+# Fields to ignore in CSV
+ignore_fields:
+  - "custom_source"
+  - "checked_in_at"
+  - "amount"
+  - "ticket_type_id" 
