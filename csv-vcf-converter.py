@@ -87,10 +87,10 @@ class Contact:
     name: str
     email: str
     phone: str
-    linkedin: str = ""
-    answers: Dict[str, str] = None
-    approval_status: str = "pending"
-    notes: str = ""
+    linkedin: str
+    answers: Dict[str, str]
+    approval_status: str
+    notes: str
     
     @property
     def first_name(self) -> str:
@@ -202,22 +202,31 @@ class ContactProcessor:
                     if contact.approval_status == 'approved':
                         contacts.append(contact)
                         self.logger.debug(f"Added contact: {contact.email}")
-                    else:
+                    elif contact.approval_status in ['declined', 'pending']:  # Handle both declined and pending
                         declined_contacts.append(contact)
-                        self.logger.debug(f"Added declined contact: {contact.email}")
+                        self.logger.debug(f"Added declined/pending contact: {contact.email}")
                 else:
                     self.logger.warning(f"Skipped invalid contact in row {row_count}")
         
         # Write declined contacts to txt file
         if declined_contacts:
-            declined_file = Path('Archive Outputs') / f"{event.date.strftime('%m-%d-%Y')}{event.code}_declined.txt"
-            declined_file.parent.mkdir(parents=True, exist_ok=True)
+            # Create Archive Outputs directory if it doesn't exist
+            archive_dir = Path('Archive Outputs')
+            archive_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Format filename like: 01-31-2025YS_declined.txt
+            declined_file = archive_dir / f"{event.date.strftime('%m-%d-%Y')}{event.code}_declined.txt"
             
             with open(declined_file, 'w', encoding='utf-8') as f:
                 for contact in declined_contacts:
-                    f.write(f"{contact.name}, {contact.phone}\n")
+                    # Write name, email and phone, handling empty fields
+                    name = contact.name if contact.name else 'No Name'
+                    email = contact.email if contact.email else 'No Email'
+                    phone = contact.phone if contact.phone else 'No Phone'
+                    status = contact.approval_status.upper()
+                    f.write(f"{name}, {email}, {phone}, {status}\n")
             
-            self.logger.info(f"Wrote {len(declined_contacts)} declined contacts to {declined_file}")
+            self.logger.info(f"Wrote {len(declined_contacts)} declined/pending contacts to {declined_file}")
         
         self.logger.info(f"Processed {len(contacts)} valid contacts from {filename}")
         return contacts
@@ -234,7 +243,10 @@ class ContactProcessor:
                 name=cleaned_row.get('name', ''),
                 email=cleaned_row.get('email', ''),
                 phone=cleaned_row.get('phone_number', ''),
-                approval_status=approval_status
+                linkedin='',  # Empty for declined contacts
+                answers={},  # Empty dict for declined contacts
+                approval_status=approval_status,
+                notes=''  # Empty notes for declined contacts
             )
         
         # Process approved contacts fully
@@ -249,14 +261,13 @@ class ContactProcessor:
             'name': cleaned_row.get('name', ''),
             'email': cleaned_row.get('email', ''),
             'phone': cleaned_row.get('phone_number', ''),
-            'linkedin': cleaned_row.get('What is your LinkedIn profile?', '')
+            'linkedin': cleaned_row.get('What is your LinkedIn profile?', ''),
+            'answers': answers,
+            'approval_status': 'approved',
+            'notes': ''  # Initialize with empty notes
         }
         
-        return Contact(
-            **contact_data,
-            answers=answers,
-            approval_status='approved'
-        )
+        return Contact(**contact_data)
 
     def _format_notes(self, contact: Contact, event: Optional[Event] = None) -> str:
         """Format contact notes with proper spacing"""
@@ -425,11 +436,10 @@ class ContactProcessor:
             self.logger.error(f"Error getting section values: {str(e)}")
             return {}
 
-    def _merge_contact_data(self, old: Contact, new: Contact, event_code: str) -> Contact:
+    def _merge_contact_data(self, old: Optional[Contact], new: Contact, event_code: str) -> Contact:
         """Smart merge of contact data based on configuration"""
         
         def is_valid_linkedin_url(url: str) -> bool:
-            """Check if string is a valid LinkedIn URL"""
             if not url:
                 return False
             url = url.lower()
@@ -438,72 +448,53 @@ class ContactProcessor:
                 ('linkedin.com' in url or 'linked.in' in url)
             )
 
-        # Keep old data if new data is empty or invalid
-        merged = Contact(
-            name=new.name or old.name,
-            email=old.email,  # Email is unique identifier
-            phone=new.phone or old.phone,
-            # Only update LinkedIn if new value is a valid URL
-            linkedin=(new.linkedin if is_valid_linkedin_url(new.linkedin) 
-                     else (old.linkedin if is_valid_linkedin_url(old.linkedin) else '')),
-            approval_status=new.approval_status,
-            answers={}
-        )
-
-        # Merge answers, preferring old valid data
-        if old.answers:
-            merged.answers.update(old.answers)
-        if new.answers:
-            # Only update answers if they're valid
-            for key, value in new.answers.items():
-                # Skip LinkedIn fields since they're handled separately
-                if key.lower().find('linkedin') >= 0:
-                    continue
-                merged.answers[key] = value
-
-        # Format new event notes using event_code
-        if new.notes:
-            # Extract the content after "EVENT: " if it exists
-            notes_content = new.notes.split("EVENT: ", 1)[-1].strip()
-            new_event_notes = f"EVENT: {event_code}  {notes_content}"  # 2 spaces after event code
-
-            # Handle notes merging
-            if old.notes:
-                # Check if this event is already in notes
-                if event_code not in old.notes:
-                    # Append new event info with proper spacing (10 spaces between events)
-                    merged.notes = f"{old.notes}          {new_event_notes}"
+        if old:  # If contact exists, keep their data and only append new event info
+            merged = Contact(
+                name=old.name,
+                email=old.email,
+                phone=old.phone,
+                linkedin=old.linkedin,
+                approval_status=old.approval_status,
+                answers=old.answers,
+                notes=old.notes  # Initialize with old notes
+            )
+            
+            # Extract new event info from new contact's notes
+            if new.notes:
+                event_info = ""
+                for line in new.notes.split("\n"):
+                    if line.startswith("EVENT:"):
+                        event_info = line.split("EVENT:", 1)[1].strip()
+                        break
+                
+                # Only append if this event isn't already in notes
+                if event_info and event_code not in old.notes:
+                    if old.notes:
+                        merged.notes = f"{old.notes}-----EVENT: {event_info}"  # 5 dashes between events
+                    else:
+                        merged.notes = f"EVENT: {event_info}"
                 else:
-                    # Keep existing notes if event already recorded
-                    merged.notes = old.notes
-            else:
-                # First event for this contact
-                merged.notes = new_event_notes
-        else:
-            merged.notes = old.notes
+                    merged.notes = old.notes  # Keep old notes if no new notes
+            
+        else:  # New contact - use all their info
+            merged = Contact(
+                name=new.name,
+                email=new.email,
+                phone=new.phone,
+                linkedin=new.linkedin if is_valid_linkedin_url(new.linkedin) else '',
+                approval_status=new.approval_status,
+                answers=new.answers,
+                notes=new.notes
+            )
 
         return merged
-
-    def _parse_notes_sections(self, notes: str) -> Dict[str, List[str]]:
-        """Parse notes into sections"""
-        sections = {}
-        current_section = None
-        
-        for line in notes.split('\n'):
-            if line.startswith('==='):
-                current_section = line.strip('= ')
-                sections[current_section] = []
-            elif current_section and line.strip():
-                sections[current_section].append(line.strip())
-        
-        return sections
 
     def _load_contacts_from_vcf(self, vcf_path: Path) -> Dict[str, Contact]:
         """Load contacts from a VCF file"""
         contacts = {}
         if not vcf_path.exists():
             return contacts
-            
+        
         try:
             current_contact = None
             with open(vcf_path, 'r', encoding='utf-8') as f:
@@ -525,14 +516,14 @@ class ContactProcessor:
                                 phone=current_contact.get('tel', ''),
                                 linkedin=current_contact.get('url', ''),
                                 notes=current_contact.get('note', ''),
-                                approval_status='approved'  # These are from VCF so they were approved
+                                approval_status='approved',  # These are from VCF so they were approved
+                                answers={}  # Initialize with empty answers dict since VCF doesn't store this
                             )
                         current_contact = None
-                    elif current_contact is not None:
-                        if ':' in line:
-                            key, value = line.split(':', 1)
-                            key = key.split(';')[0].lower()  # Handle TYPE parameters
-                            current_contact[key] = value
+                    elif current_contact is not None and ':' in line:
+                        key, value = line.split(':', 1)
+                        key = key.split(';')[0].lower()  # Handle TYPE parameters
+                        current_contact[key] = value
         
             return contacts
         except Exception as e:
