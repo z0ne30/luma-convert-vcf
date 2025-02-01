@@ -1,12 +1,12 @@
-# Input/Output Data Directories
+Input/Output Data Directories
 Contacts Input/*
 Contact Snapshots/*
-Archive Outputs/*
+Archive Output/*
 !Contacts Input/.gitkeep
 !Contact Snapshots/.gitkeep
 !Archive Outputs/.gitkeep
 question_config.yaml
-# Logs
+Logs
 *.log
 contact_converter.log
 

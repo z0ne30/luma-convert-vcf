@@ -1,70 +1,54 @@
-# Contact Converter
+# Launch Yard Contacts Manager
 
-Converts Luma CSV exports to VCF format with event history tracking.
+A Python tool for managing and organizing community contacts in VCF format from CSV input.
 
-## Setup
+## Features
 
-1. Create required directories:
+- Convert CSV contact data to VCF format
+- Merge contact information from multiple events
+- Customizable questionnaire configuration
+- Automated note formatting and deduplication
+
+## Installation
+
+1. Clone this repository
+2. Install dependencies:
    ```bash
-   mkdir -p "Contacts Input"
-   mkdir -p "VCF Output"
-   mkdir -p "Contact Snapshots"
+   pip install -r requirements.txt
    ```
 
-2. Place CSV files in `Contacts Input` directory
+## Configuration
 
-3. Ensure `question_config.yaml` is configured for your events
+Copy `question_config.yaml.example` to `question_config.yaml` and customize it for your needs. The configuration includes:
+
+- Sections and questions
+- Community roles
+- Event codes
+
+See the example file for detailed documentation.
 
 ## Usage
 
-### Process a single new event:
-bash
-python csv-vcf-converter.py "Event Name.csv" --verbose
-
-### Process multiple historical events:
-Process files in chronological order to build contact history:
-
-bash
-python csv-vcf-converter.py "older-event.csv"
-python csv-vcf-converter.py "newer-event.csv"
-
-### Output Files
-- `Contact Snapshots/{date}_{event_code}_snapshot.vcf`: Individual event snapshots
-- `Contact Snapshots/master_contacts.vcf`: Complete contact list with full history
-- `Contact Snapshots/contact_history.json`: Processing history and contact data
-
-## Adding New Event Types
-
-1. Edit `question_config.yaml`:
-   ```yaml
-   events:
-     types:
-       NEW_EVENT:
-         name: "New Event Name"
-         code: "NE"
-         identifiers: ["New Event", "NE"]
-         default_questions:
-           - "linkedin"
-           - "role_type"
+1. Prepare your CSV file with contact information
+2. Run the converter:
+   ```bash
+   python csv-vcf-converter.py input.csv output.vcf
    ```
+3. The tool will:
+   - Process the CSV data
+   - Merge with existing VCF contacts if present
+   - Generate a new VCF file with formatted notes
 
-2. Add any new questions under `events.questions`
+## Example Workflow
 
-## Contact Format
+1. After each event, collect responses in a CSV file
+2. Run the converter to update your master contacts
+3. Import the VCF file into your contact management system
 
-Contacts are stored with:
-- Basic info (name, email, phone)
-- LinkedIn URL
-- Structured notes showing:
-  - All events attended
-  - Latest professional info
-  - Latest needs/interests
-  - Community involvement
-  - Aspirational goals
+## Contributing
 
-## Importing to Apple Contacts
+Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 
-1. Open Contacts app
-2. File > Import
-3. Select `master_contacts.vcf`
-4. Choose to replace existing contacts when prompted
+## License
+
+[MIT](https://choosealicense.com/licenses/mit/)

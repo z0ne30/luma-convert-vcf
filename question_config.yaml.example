@@ -1,69 +1,29 @@
-# Core Configuration
-core:
-  directories:
-    input: "Contacts Input"
-    snapshots: "Contact Snapshots"
-  vcf:
-    version: "3.0"
-    required_fields: ["name", "email", "phone"]
+# Example configuration for the Launch Yard contacts questionnaire
+# This file demonstrates how to structure your question_config.yaml
 
-# Event Configuration
-events:
-  types:
-    YS:  # Yard Sale events
-      name: "Yard Sale"
-      code: "YS" 
-      identifiers: ["Yard Sale", "YS"]
-      questions:
-        - "rsvp_role"
-        - "rsvp_giving"
-        - "rsvp_demo"
-        - "rsvp_linkedin"
+# Section headers are used to group related questions
+sections:
+  - header: "Daily Joy"
+    questions:
+      - "What brought you joy today?"
+      - "What are you grateful for?"
 
-  # Question definitions
-  questions:
-    rsvp_role:
-      category: "PROFESSIONAL"
-      note_prefix: "ROLE"
-      patterns:
-        - "Which of the following(s) best describes you?"
-    
-    rsvp_giving:
-      category: "COMMUNITY"
-      note_prefix: "GIVES BACK BY"
-      patterns:
-        - "What's your favorite way to give back to the community?"
-    
-    rsvp_demo:
-      category: "NEEDS"
-      note_prefix: "REQUEST TO DEMO"
-      patterns:
-        - "Do you want to demo your company?"
-      transform:
-        "Yes! I've submitted my application using 🔗 in description!": "Yes"
-        "No, I'm here to give the best feedback to founders using the demo-night app!": "No"
-    
-    rsvp_linkedin:
-      category: "CONTACT"
-      note_prefix: "LINKEDIN"
-      patterns:
-        - "What is your LinkedIn profile?"
+  - header: "Needs Help With"
+    questions:
+      - "What challenges are you facing?"
+      - "What support do you need from the community?"
 
-# Note formatting
-notes:
-  sections:
-    - name: "EVENTS"
-      priority: 1
-    - name: "PROFESSIONAL"
-      priority: 2
-    - name: "NEEDS"
-      priority: 3
-    - name: "COMMUNITY"
-      priority: 4
+  - header: "Gives Back By"
+    questions:
+      - "How do you contribute to the community?"
+      - "What skills or resources can you share?"
 
-# Fields to ignore in CSV
-ignore_fields:
-  - "custom_source"
-  - "checked_in_at"
-  - "amount"
-  - "ticket_type_id" 
+  - header: "Next Year Goals"
+    questions:
+      - "What are your professional goals for the next year?"
+      - "What are your personal goals for the next year?"
+
+# Event codes should be unique identifiers for each event
+event_codes:
+  - "WY"  # Weekly Yacht
+  - "YS"  # Yearly Summit
