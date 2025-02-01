@@ -187,7 +187,7 @@ class ContactProcessor:
             events = existing_note.split('__________')
             # Check if event already exists
             event_code_date = f"({event_info['code']})"
-            if event_code_date in events:
+            if any(event_code_date in event for event in events):
                 return existing_note
             else:
                 # Filter out LinkedIn from note details
@@ -196,10 +196,9 @@ class ContactProcessor:
                 return f"{existing_note}__________{event_code_date} -- {details}"
         else:
             # Format new note if no existing note
-            note_lines = [f"({event_info['code']}) -- {k}: {v}" 
-                          for k, v in new_event_data.items() 
-                          if k != 'LINKEDIN']
-            return '__________'.join(note_lines)
+            filtered_data = {k:v for k,v in new_event_data.items() if k != 'LINKEDIN'}
+            details = ' -- '.join([f"{key}:{value}" for key, value in filtered_data.items()])
+            return f"({event_info['code']}) -- {details}"
 
     def _write_snapshot(self, contacts, event_info):
         """Write event-specific VCF snapshot"""
