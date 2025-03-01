@@ -9,6 +9,7 @@ question_config.yaml
 Logs
 *.log
 contact_converter.log
+event_vcfs/*
 
 # Python
 __pycache__/

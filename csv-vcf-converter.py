@@ -7,6 +7,7 @@ import phonenumbers
 from fuzzywuzzy import fuzz
 from pathlib import Path
 from datetime import datetime
+import sys
 
 
 class ContactProcessor:
@@ -311,5 +312,12 @@ class ContactProcessor:
 
 if __name__ == "__main__":
     processor = ContactProcessor('question_config.yaml')
-    input_dir = "Contacts Input"
-    processor.process_event_directory(input_dir)
+    
+    if len(sys.argv) > 1:
+        # Process single file from command line argument
+        file_path = Path(sys.argv[1])
+        processor.process_event(file_path)
+    else:
+        # Default directory processing
+        input_dir = "Contacts Input"
+        processor.process_event_directory(input_dir)
