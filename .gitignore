@@ -9,7 +9,10 @@ question_config.yaml
 Logs
 *.log
 contact_converter.log
+
+# Event VCFs
 event_vcfs/*
+!event_vcfs/.gitkeep
 
 # Python
 __pycache__/
