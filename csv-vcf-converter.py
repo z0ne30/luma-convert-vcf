@@ -191,7 +191,29 @@ class ContactProcessor:
             if any(event_code_date in event for event in events):
                 return existing_note
             else:
-                # Filter out LinkedIn from note details
+                # Handle ROLE field specially
+                if 'ROLE' in new_event_data:
+                    # Extract existing ROLE if present
+                    existing_role = None
+                    for event in events:
+                        if 'ROLE:' in event:
+                            existing_role = event.split('ROLE:')[1].split(' --')[0].strip()
+                            break
+                    
+                    # Compare and update ROLE only if different
+                    new_role = new_event_data['ROLE']
+                    if existing_role:
+                        existing_roles = set(r.strip() for r in existing_role.split(','))
+                        new_roles = set(r.strip() for r in new_role.split(','))
+                        if new_roles.issubset(existing_roles):
+                            # Remove ROLE from new_event_data if no new roles
+                            new_event_data.pop('ROLE')
+                        else:
+                            # Update with combined roles
+                            combined_roles = sorted(existing_roles.union(new_roles))
+                            new_event_data['ROLE'] = ', '.join(combined_roles)
+                
+                # Filter out LinkedIn and format remaining data
                 filtered_data = {k:v for k,v in new_event_data.items() if k != 'LINKEDIN'}
                 details = ' -- '.join([f"{key}:{value}" for key, value in filtered_data.items()])
                 return f"{existing_note}__________{event_code_date} -- {details}"
